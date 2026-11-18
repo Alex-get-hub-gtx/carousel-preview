@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#121011">
+<title>New App CTA Carousels</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600&family=Inter:wght@400;500;600&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+img{max-width:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* Layout: a single feed column — one carousel per block, one slide at a time, notes under the slide you're looking at. */
+:root{
+  --bg:#121011;
+  --surface:#1B1718;
+  --surface-2:#241E20;
+  --line:#312A2C;
+  --fg:#F3EEE9;
+  --muted:#9C8F8C;
+  --accent:#D4475B;
+  --accent-soft:rgba(212,71,91,.14);
+  --display:'Playfair Display',Georgia,'Times New Roman',serif;
+  --ui:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font-family:var(--ui);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0;
+  overflow-x:hidden;
+}
+.wrap{max-width:500px;margin:0 auto;padding-block:30px 52px}
+
+header.top{padding-block:10px 26px;border-bottom:1px solid var(--line);margin-bottom:30px}
+h1{
+  font-family:var(--display);
+  font-weight:600;
+  font-size:clamp(30px,8vw,44px);
+  line-height:1.04;
+  letter-spacing:-.015em;
+  margin:0;
+  text-wrap:balance;
+}
+
+.set{margin-bottom:52px}
+.sethead{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+h2{
+  font-family:var(--display);
+  font-weight:500;
+  font-size:23px;
+  letter-spacing:-.01em;
+  margin:0;
+}
+.counter{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums;margin-left:auto}
+.flagcount{
+  color:var(--accent);background:var(--accent-soft);
+  border:1px solid rgba(212,71,91,.32);border-radius:999px;
+  padding:2px 10px;font-size:11.5px;font-weight:500;
+}
+
+.frame{position:relative;border:1px solid var(--line);border-radius:5px;overflow:hidden;background:var(--surface)}
+.track{
+  display:flex;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.track::-webkit-scrollbar{display:none}
+.cell{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;aspect-ratio:4/5}
+.cell img{display:block;width:100%;height:100%;object-fit:cover;max-width:100%;background:var(--surface-2)}
+.nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:34px;height:34px;border-radius:50%;border:0;
+  background:rgba(14,11,12,.62);color:#fff;
+  font-size:17px;line-height:1;cursor:pointer;
+  display:grid;place-items:center;
+  opacity:.85;
+}
+.nav:hover{opacity:1;background:rgba(14,11,12,.82)}
+.nav[disabled]{opacity:0;pointer-events:none}
+.nav.prev{left:8px}
+.nav.next{right:8px}
+.flagdot{
+  position:absolute;top:10px;right:10px;
+  background:var(--accent);color:#fff;
+  font-size:11px;font-weight:600;letter-spacing:.04em;
+  padding:3px 8px;border-radius:999px;
+}
+
+.dots{display:flex;gap:6px;justify-content:center;padding:12px 0 2px}
+.dot{
+  width:6px;height:6px;border-radius:50%;padding:0;border:0;
+  background:var(--line);cursor:pointer;flex:0 0 auto;
+}
+.dot.on{background:var(--fg)}
+.dot.has{background:var(--accent)}
+
+.noteline{display:flex;gap:8px;align-items:flex-start;margin-top:10px}
+.noteline textarea{
+  flex:1;min-width:0;
+  background:var(--surface);color:var(--fg);
+  border:1px solid var(--line);border-radius:4px;
+  font-family:var(--ui);font-size:14.5px;line-height:1.45;
+  padding:9px 11px;resize:none;height:40px;overflow:hidden;
+}
+.noteline textarea::placeholder{color:var(--muted)}
+.noteline textarea:focus{outline:none;border-color:var(--accent);height:74px;overflow:auto}
+.noteline button{
+  flex:0 0 auto;background:var(--surface);color:var(--fg);
+  border:1px solid var(--line);border-radius:4px;
+  font-family:var(--ui);font-size:14px;font-weight:500;
+  padding:9px 14px;cursor:pointer;height:40px;
+}
+.noteline button:hover{border-color:var(--accent);color:var(--accent)}
+
+.setnotes{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+.note{
+  display:flex;gap:10px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--line);
+  border-left:2px solid var(--accent);border-radius:4px;
+  padding:9px 11px;
+}
+.note .on{
+  color:var(--accent);font-size:11.5px;font-weight:600;
+  letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;padding-top:3px;
+}
+.note p{margin:0;flex:1;min-width:0;font-size:14.5px;overflow-wrap:anywhere}
+.note button{background:none;border:0;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;padding:0 2px}
+.note button:hover{color:var(--accent)}
+
+button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+@media (prefers-reduced-motion:reduce){.track{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><h1>New App CTA Carousels</h1></header>
+  <main id="sets"></main>
+</div>
+
+<script>
+(function(){
+  var SETS = 9, SLIDES = 10, KEY = 'anna-carousel-notes-v2';
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  function src(c, s){ return 'slides/c' + pad(c) + '-' + pad(s) + '.jpg'; }
+
+  var notes = [];
+  try { var raw = localStorage.getItem(KEY); if (raw) notes = JSON.parse(raw) || []; } catch (e) { notes = []; }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(notes)); } catch (e) {} }
+  function forSlide(c, s){ return notes.filter(function(n){ return n.c === c && n.s === s; }); }
+  function forSet(c){ return notes.filter(function(n){ return n.c === c; }).sort(function(a, b){ return a.s - b.s; }); }
+
+  var at = {};           // carousel -> current slide index (1-based)
+  var sets = document.getElementById('sets');
+
+  for (var c = 1; c <= SETS; c++) {
+    at[c] = 1;
+    var sec = document.createElement('section');
+    sec.className = 'set';
+
+    var head = document.createElement('div');
+    head.className = 'sethead';
+    head.innerHTML = '<h2>Carousel ' + c + '</h2>' +
+      '<span class="flagcount" data-count="' + c + '" hidden></span>' +
+      '<span class="counter" data-counter="' + c + '">1 / ' + SLIDES + '</span>';
+    sec.appendChild(head);
+
+    var frame = document.createElement('div');
+    frame.className = 'frame';
+    var track = document.createElement('div');
+    track.className = 'track';
+    track.setAttribute('data-track', c);
+    for (var s = 1; s <= SLIDES; s++) {
+      var cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.setAttribute('data-s', s);
+      var eager = (c <= 2 && s === 1);
+      cell.innerHTML = '<img src="' + src(c, s) + '" width="1080" height="1350" decoding="async"' +
+        (eager ? '' : ' loading="lazy"') + ' alt="Carousel ' + c + ', slide ' + s + '">';
+      track.appendChild(cell);
+    }
+    frame.appendChild(track);
+    frame.insertAdjacentHTML('beforeend',
+      '<button class="nav prev" data-go="-1" data-c="' + c + '" aria-label="Previous slide" disabled>&#8249;</button>' +
+      '<button class="nav next" data-go="1" data-c="' + c + '" aria-label="Next slide">&#8250;</button>' +
+      '<span class="flagdot" data-flag="' + c + '" hidden>Note</span>');
+    sec.appendChild(frame);
+
+    var dots = document.createElement('div');
+    dots.className = 'dots';
+    dots.setAttribute('data-dots', c);
+    for (var d = 1; d <= SLIDES; d++) {
+      dots.insertAdjacentHTML('beforeend',
+        '<button class="dot' + (d === 1 ? ' on' : '') + '" data-c="' + c + '" data-to="' + d +
+        '" aria-label="Slide ' + d + '"></button>');
+    }
+    sec.appendChild(dots);
+
+    var line = document.createElement('div');
+    line.className = 'noteline';
+    line.innerHTML = '<textarea data-input="' + c + '" rows="1" placeholder="Note on slide 1"></textarea>' +
+                     '<button data-add="' + c + '">Add</button>';
+    sec.appendChild(line);
+
+    var list = document.createElement('div');
+    list.className = 'setnotes';
+    list.setAttribute('data-notes', c);
+    sec.appendChild(list);
+
+    sets.appendChild(sec);
+  }
+
+  function setActive(c, i){
+    at[c] = i;
+    document.querySelector('[data-counter="' + c + '"]').textContent = i + ' / ' + SLIDES;
+    var dots = document.querySelectorAll('[data-dots="' + c + '"] .dot');
+    for (var k = 0; k < dots.length; k++) dots[k].classList.toggle('on', k + 1 === i);
+    var inp = document.querySelector('[data-input="' + c + '"]');
+    if (inp) inp.placeholder = 'Note on slide ' + i;
+    var prev = document.querySelector('.nav.prev[data-c="' + c + '"]');
+    var next = document.querySelector('.nav.next[data-c="' + c + '"]');
+    prev.disabled = i === 1;
+    next.disabled = i === SLIDES;
+    var flag = document.querySelector('[data-flag="' + c + '"]');
+    flag.hidden = forSlide(c, i).length === 0;
+  }
+
+  var tracks = document.querySelectorAll('.track');
+  for (var t = 0; t < tracks.length; t++) {
+    (function(track){
+      var c = Number(track.getAttribute('data-track'));
+      var io = new IntersectionObserver(function(entries){
+        var best = null;
+        entries.forEach(function(en){
+          if (en.isIntersecting && (!best || en.intersectionRatio > best.intersectionRatio)) best = en;
+        });
+        if (best) setActive(c, Number(best.target.getAttribute('data-s')));
+      }, { root: track, threshold: 0.6 });
+      var cells = track.querySelectorAll('.cell');
+      for (var i = 0; i < cells.length; i++) io.observe(cells[i]);
+    })(tracks[t]);
+  }
+
+  function goTo(c, i){
+    var track = document.querySelector('[data-track="' + c + '"]');
+    var cell = track.querySelector('.cell[data-s="' + i + '"]');
+    if (cell) track.scrollTo({ left: cell.offsetLeft - track.offsetLeft, behavior: 'smooth' });
+  }
+
+  document.addEventListener('click', function(e){
+    var el = e.target.closest ? e.target.closest('[data-go],[data-to],[data-add],[data-del]') : null;
+    if (!el) return;
+    if (el.hasAttribute('data-go')) {
+      var c = Number(el.getAttribute('data-c'));
+      var n = at[c] + Number(el.getAttribute('data-go'));
+      if (n >= 1 && n <= SLIDES) goTo(c, n);
+      return;
+    }
+    if (el.hasAttribute('data-to')) {
+      goTo(Number(el.getAttribute('data-c')), Number(el.getAttribute('data-to')));
+      return;
+    }
+    if (el.hasAttribute('data-add')) {
+      var cc = Number(el.getAttribute('data-add'));
+      var inp = document.querySelector('[data-input="' + cc + '"]');
+      var v = inp.value.trim();
+      if (!v) { inp.focus(); return; }
+      notes.push({ c: cc, s: at[cc], t: v });
+      save();
+      inp.value = '';
+      render();
+    }
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' || !e.metaKey && !e.ctrlKey) return;
+    var a = document.activeElement;
+    if (a && a.hasAttribute && a.hasAttribute('data-input')) {
+      var c = Number(a.getAttribute('data-input'));
+      var btn = document.querySelector('[data-add="' + c + '"]');
+      if (btn) btn.click();
+    }
+  });
+
+  function render(){
+    for (var c = 1; c <= SETS; c++) {
+      var mine = forSet(c);
+      var badge = document.querySelector('[data-count="' + c + '"]');
+      badge.hidden = mine.length === 0;
+      badge.textContent = mine.length + (mine.length === 1 ? ' note' : ' notes');
+
+      var box = document.querySelector('[data-notes="' + c + '"]');
+      box.innerHTML = '';
+      mine.forEach(function(n){
+        var row = document.createElement('div');
+        row.className = 'note';
+        row.innerHTML = '<span class="on">Slide ' + n.s + '</span><p></p><button aria-label="Remove note">&times;</button>';
+        row.querySelector('p').textContent = n.t;
+        row.querySelector('button').addEventListener('click', function(){
+          notes = notes.filter(function(x){ return x !== n; });
+          save(); render();
+        });
+        box.appendChild(row);
+      });
+
+      var dots = document.querySelectorAll('[data-dots="' + c + '"] .dot');
+      for (var k = 0; k < dots.length; k++) dots[k].classList.toggle('has', forSlide(c, k + 1).length > 0);
+      var flag = document.querySelector('[data-flag="' + c + '"]');
+      flag.hidden = forSlide(c, at[c]).length === 0;
+    }
+  }
+
+  render();
+  for (var c2 = 1; c2 <= SETS; c2++) setActive(c2, 1);
+})();
+</script>
+</body>
+</html>
