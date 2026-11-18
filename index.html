@@ -142,6 +142,25 @@ h2{
 .note button{background:none;border:0;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;padding:0 2px}
 .note button:hover{color:var(--accent)}
 
+.wrapup{
+  margin-top:8px;border-top:1px solid var(--line);padding-top:24px;
+  display:flex;flex-direction:column;gap:11px;align-items:flex-start;
+}
+.wrapup p{margin:0;color:var(--muted);font-size:14.5px}
+.wrapup .go{
+  background:var(--accent);color:#fff;border:0;
+  font-family:var(--ui);font-size:14.5px;font-weight:600;
+  padding:11px 18px;border-radius:4px;cursor:pointer;
+}
+.wrapup .go:hover{filter:brightness(1.08)}
+.wrapup .msg{color:var(--accent);font-size:13.5px}
+.wrapup .out{
+  width:100%;min-height:150px;
+  background:var(--surface-2);color:var(--fg);
+  border:1px solid var(--line);border-radius:4px;
+  font-family:var(--ui);font-size:14px;line-height:1.55;
+  padding:11px;resize:vertical;white-space:pre-wrap;
+}
 button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 @media (prefers-reduced-motion:reduce){.track{scroll-behavior:auto}}
@@ -151,6 +170,12 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
 <div class="wrap">
   <header class="top"><h1>New App CTA Carousels</h1></header>
   <main id="sets"></main>
+  <div class="wrapup" id="wrapup" hidden>
+    <p id="wrapupLine"></p>
+    <button class="go" id="copyAll">Copy my notes</button>
+    <span class="msg" id="copyMsg"></span>
+    <textarea class="out" id="copyOut" readonly spellcheck="false" hidden></textarea>
+  </div>
 </div>
 
 <script>
@@ -323,7 +348,49 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
       var flag = document.querySelector('[data-flag="' + c + '"]');
       flag.hidden = forSlide(c, at[c]).length === 0;
     }
+    var total = notes.length;
+    wrapup.hidden = total === 0;
+    wrapupLine.textContent = 'You have ' + total + ' note' + (total === 1 ? '' : 's') +
+      '. Copy them and send them over when you are done.';
+    copyMsg.textContent = '';
+    copyOut.hidden = true;
   }
+
+  function plain(){
+    var out = [], byc = {};
+    notes.forEach(function(n){ (byc[n.c] = byc[n.c] || []).push(n); });
+    Object.keys(byc).map(Number).sort(function(a, b){ return a - b; }).forEach(function(c){
+      out.push('CAROUSEL ' + c);
+      byc[c].sort(function(a, b){ return a.s - b.s; }).forEach(function(n){
+        out.push('Slide ' + n.s + ': ' + n.t);
+      });
+      out.push('');
+    });
+    return out.join('\n').trim();
+  }
+
+  var wrapup = document.getElementById('wrapup'),
+      wrapupLine = document.getElementById('wrapupLine'),
+      copyMsg = document.getElementById('copyMsg'),
+      copyOut = document.getElementById('copyOut');
+
+  document.getElementById('copyAll').addEventListener('click', function(){
+    var text = plain();
+    if (!text) return;
+    var reveal = function(){
+      copyOut.value = text;
+      copyOut.hidden = false;
+      copyMsg.textContent = 'Select the text below and copy it.';
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function(){
+          copyMsg.textContent = 'Copied. Paste it into your message.';
+          copyOut.hidden = true;
+        }, reveal);
+      } else { reveal(); }
+    } catch (e) { reveal(); }
+  });
 
   render();
   for (var c2 = 1; c2 <= SETS; c2++) setActive(c2, 1);
