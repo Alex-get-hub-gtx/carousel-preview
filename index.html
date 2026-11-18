@@ -142,25 +142,19 @@ h2{
 .note button{background:none;border:0;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;padding:0 2px}
 .note button:hover{color:var(--accent)}
 
-.wrapup{
-  margin-top:8px;border-top:1px solid var(--line);padding-top:24px;
-  display:flex;flex-direction:column;gap:11px;align-items:flex-start;
-}
+.wrapup{margin-top:8px;border-top:1px solid var(--line);padding-top:22px}
 .wrapup p{margin:0;color:var(--muted);font-size:14.5px}
-.wrapup .go{
-  background:var(--accent);color:#fff;border:0;
-  font-family:var(--ui);font-size:14.5px;font-weight:600;
-  padding:11px 18px;border-radius:4px;cursor:pointer;
-}
-.wrapup .go:hover{filter:brightness(1.08)}
-.wrapup .msg{color:var(--accent);font-size:13.5px}
-.wrapup .out{
-  width:100%;min-height:150px;
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(18px + env(safe-area-inset-bottom,0px));
+  z-index:50;
   background:var(--surface-2);color:var(--fg);
-  border:1px solid var(--line);border-radius:4px;
-  font-family:var(--ui);font-size:14px;line-height:1.55;
-  padding:11px;resize:vertical;white-space:pre-wrap;
+  border:1px solid var(--line);border-radius:999px;
+  padding:9px 18px;font-size:13.5px;
+  box-shadow:0 8px 28px rgba(0,0,0,.45);
+  max-width:calc(100vw - 32px);
 }
+.toast.bad{border-color:var(--accent);color:var(--accent)}
 button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 @media (prefers-reduced-motion:reduce){.track{scroll-behavior:auto}}
@@ -170,23 +164,59 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
 <div class="wrap">
   <header class="top"><h1>New App CTA Carousels</h1></header>
   <main id="sets"></main>
-  <div class="wrapup" id="wrapup" hidden>
-    <p id="wrapupLine"></p>
-    <button class="go" id="copyAll">Copy my notes</button>
-    <span class="msg" id="copyMsg"></span>
-    <textarea class="out" id="copyOut" readonly spellcheck="false" hidden></textarea>
-  </div>
+  <div class="wrapup" id="wrapup" hidden><p id="wrapupLine"></p></div>
 </div>
+
+<div class="toast" id="toast" hidden></div>
 
 <script>
 (function(){
-  var SETS = 9, SLIDES = 10, KEY = 'anna-carousel-notes-v2';
+  var SETS = 9, SLIDES = 10;
+  var STORE = 'akc-abf77546c0275238dc425a78';
+  var READ_URL = 'https://textdb.online/' + STORE;
+  var WRITE_URL = 'https://textdb.online/update';
+  var LOCAL = 'anna-carousel-notes-v3';
+
   function pad(n){ return n < 10 ? '0' + n : '' + n; }
   function src(c, s){ return 'slides/c' + pad(c) + '-' + pad(s) + '.jpg'; }
 
   var notes = [];
-  try { var raw = localStorage.getItem(KEY); if (raw) notes = JSON.parse(raw) || []; } catch (e) { notes = []; }
-  function save(){ try { localStorage.setItem(KEY, JSON.stringify(notes)); } catch (e) {} }
+  try { var raw = localStorage.getItem(LOCAL); if (raw) notes = JSON.parse(raw) || []; } catch (e) { notes = []; }
+  function save(){ try { localStorage.setItem(LOCAL, JSON.stringify(notes)); } catch (e) {} }
+
+  var toastEl = document.getElementById('toast'), toastTimer = null;
+  function toast(msg, bad, sticky){
+    toastEl.textContent = msg;
+    toastEl.classList.toggle('bad', !!bad);
+    toastEl.hidden = false;
+    if (toastTimer) clearTimeout(toastTimer);
+    if (!sticky) toastTimer = setTimeout(function(){ toastEl.hidden = true; }, bad ? 5000 : 1800);
+  }
+
+  function fetchRemote(){
+    return fetch(READ_URL + '?t=' + Date.now(), { cache: 'no-store' })
+      .then(function(r){ if (!r.ok) throw 0; return r.text(); })
+      .then(function(t){ var v = JSON.parse(t); if (!Array.isArray(v)) throw 0; return v; });
+  }
+  function pushRemote(arr){
+    var b = new URLSearchParams();
+    b.set('key', STORE);
+    b.set('value', JSON.stringify(arr));
+    return fetch(WRITE_URL, { method: 'POST', body: b })
+      .then(function(r){ if (!r.ok) throw 0; });
+  }
+  function commit(mutate){
+    toast('Saving…', false, true);
+    fetchRemote()
+      .catch(function(){ return notes; })
+      .then(function(base){
+        notes = mutate(base.slice());
+        save(); render();
+        return pushRemote(notes);
+      })
+      .then(function(){ toast('Saved'); })
+      .catch(function(){ toast('Not saved. Check your connection and try again.', true); });
+  }
   function forSlide(c, s){ return notes.filter(function(n){ return n.c === c && n.s === s; }); }
   function forSet(c){ return notes.filter(function(n){ return n.c === c; }).sort(function(a, b){ return a.s - b.s; }); }
 
@@ -305,10 +335,12 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
       var inp = document.querySelector('[data-input="' + cc + '"]');
       var v = inp.value.trim();
       if (!v) { inp.focus(); return; }
-      notes.push({ c: cc, s: at[cc], t: v });
-      save();
+      var entry = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        c: cc, s: at[cc], t: v
+      };
       inp.value = '';
-      render();
+      commit(function(list){ list.push(entry); return list; });
     }
   });
 
@@ -337,8 +369,11 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
         row.innerHTML = '<span class="on">Slide ' + n.s + '</span><p></p><button aria-label="Remove note">&times;</button>';
         row.querySelector('p').textContent = n.t;
         row.querySelector('button').addEventListener('click', function(){
-          notes = notes.filter(function(x){ return x !== n; });
-          save(); render();
+          commit(function(list){
+            return list.filter(function(x){
+              return n.id ? x.id !== n.id : !(x.c === n.c && x.s === n.s && x.t === n.t);
+            });
+          });
         });
         box.appendChild(row);
       });
@@ -350,50 +385,27 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
     }
     var total = notes.length;
     wrapup.hidden = total === 0;
-    wrapupLine.textContent = 'You have ' + total + ' note' + (total === 1 ? '' : 's') +
-      '. Copy them and send them over when you are done.';
-    copyMsg.textContent = '';
-    copyOut.hidden = true;
-  }
-
-  function plain(){
-    var out = [], byc = {};
-    notes.forEach(function(n){ (byc[n.c] = byc[n.c] || []).push(n); });
-    Object.keys(byc).map(Number).sort(function(a, b){ return a - b; }).forEach(function(c){
-      out.push('CAROUSEL ' + c);
-      byc[c].sort(function(a, b){ return a.s - b.s; }).forEach(function(n){
-        out.push('Slide ' + n.s + ': ' + n.t);
-      });
-      out.push('');
-    });
-    return out.join('\n').trim();
+    wrapupLine.textContent = total + ' note' + (total === 1 ? '' : 's') +
+      ' saved. Aleks can see them, nothing else to do.';
   }
 
   var wrapup = document.getElementById('wrapup'),
-      wrapupLine = document.getElementById('wrapupLine'),
-      copyMsg = document.getElementById('copyMsg'),
-      copyOut = document.getElementById('copyOut');
-
-  document.getElementById('copyAll').addEventListener('click', function(){
-    var text = plain();
-    if (!text) return;
-    var reveal = function(){
-      copyOut.value = text;
-      copyOut.hidden = false;
-      copyMsg.textContent = 'Select the text below and copy it.';
-    };
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(function(){
-          copyMsg.textContent = 'Copied. Paste it into your message.';
-          copyOut.hidden = true;
-        }, reveal);
-      } else { reveal(); }
-    } catch (e) { reveal(); }
-  });
+      wrapupLine = document.getElementById('wrapupLine');
 
   render();
   for (var c2 = 1; c2 <= SETS; c2++) setActive(c2, 1);
+
+  function pull(){
+    return fetchRemote().then(function(server){
+      notes = server; save(); render();
+    });
+  }
+  pull().catch(function(){
+    if (notes.length) toast('Showing your last saved notes. Reload if they look out of date.', true);
+  });
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden) pull().catch(function(){});
+  });
 })();
 </script>
 </body>
