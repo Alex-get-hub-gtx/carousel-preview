@@ -53,17 +53,6 @@ h1{
   text-wrap:balance;
 }
 
-.switch{
-  display:flex;gap:4px;margin-top:20px;width:max-content;
-  background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;
-}
-.switch button{
-  border:0;border-radius:999px;cursor:pointer;
-  font-family:var(--ui);font-size:14px;font-weight:600;letter-spacing:-.01em;
-  padding:9px 22px;background:transparent;color:var(--muted);
-}
-.switch button.on{background:var(--accent);color:#fff}
-
 .set{margin-bottom:52px}
 .sethead{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
 h2{
@@ -173,13 +162,7 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
 </head>
 <body>
 <div class="wrap">
-  <header class="top">
-    <h1>New App CTA Carousels</h1>
-    <div class="switch" id="switch">
-      <button type="button" data-style="1" class="on">Style 1</button>
-      <button type="button" data-style="2">Style 2</button>
-    </div>
-  </header>
+  <header class="top"><h1>New App CTA Carousels</h1></header>
   <main id="sets"></main>
   <div class="wrapup" id="wrapup" hidden><p id="wrapupLine"></p></div>
 </div>
@@ -195,10 +178,10 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
   var LOCAL = 'anna-carousel-notes-v3';
 
   var STYLE = 1;
-  try { var sp = localStorage.getItem('anna-carousel-style'); if (sp === '2') STYLE = 2; } catch (e) {}
+
 
   function pad(n){ return n < 10 ? '0' + n : '' + n; }
-  var BUILD = '10';   // bumped on every re-render so nobody reviews a cached slide
+  var BUILD = '11';   // bumped on every re-render so nobody reviews a cached slide
   function src(c, s){ return 'slides/s' + STYLE + '/c' + pad(c) + '-' + pad(s) + '.jpg?v=' + BUILD; }
 
   var notes = [];
@@ -414,28 +397,7 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
   var wrapup = document.getElementById('wrapup'),
       wrapupLine = document.getElementById('wrapupLine');
 
-  function paintStyle(){
-    var btns = document.querySelectorAll('#switch button');
-    for (var i = 0; i < btns.length; i++)
-      btns[i].classList.toggle('on', Number(btns[i].getAttribute('data-style')) === STYLE);
-    var imgs = document.querySelectorAll('.cell img');
-    for (var k = 0; k < imgs.length; k++) {
-      var cell = imgs[k].parentNode, c = Number(cell.parentNode.getAttribute('data-track'));
-      imgs[k].src = src(c, Number(cell.getAttribute('data-s')));
-    }
-    render();
-  }
-  document.getElementById('switch').addEventListener('click', function(e){
-    var b = e.target.closest ? e.target.closest('button[data-style]') : null;
-    if (!b) return;
-    var n = Number(b.getAttribute('data-style'));
-    if (n === STYLE) return;
-    STYLE = n;
-    try { localStorage.setItem('anna-carousel-style', String(STYLE)); } catch (err) {}
-    paintStyle();
-  });
-
-  paintStyle();
+  render();
   for (var c2 = 1; c2 <= SETS; c2++) setActive(c2, 1);
 
   function pull(){
