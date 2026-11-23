@@ -198,7 +198,8 @@ button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outl
   try { var sp = localStorage.getItem('anna-carousel-style'); if (sp === '2') STYLE = 2; } catch (e) {}
 
   function pad(n){ return n < 10 ? '0' + n : '' + n; }
-  function src(c, s){ return 'slides/s' + STYLE + '/c' + pad(c) + '-' + pad(s) + '.jpg'; }
+  var BUILD = '9';   // bumped on every re-render so nobody reviews a cached slide
+  function src(c, s){ return 'slides/s' + STYLE + '/c' + pad(c) + '-' + pad(s) + '.jpg?v=' + BUILD; }
 
   var notes = [];
   try { var raw = localStorage.getItem(LOCAL); if (raw) notes = JSON.parse(raw) || []; } catch (e) { notes = []; }
